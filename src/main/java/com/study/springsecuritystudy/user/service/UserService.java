@@ -25,63 +25,58 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
-    private final JwtUtil jwtUtil;
+	private final UserRepository userRepository;
+	private final PasswordEncoder passwordEncoder;
+	private final AuthenticationManager authenticationManager;
+	private final JwtUtil jwtUtil;
 
-    private final String ADMIN_TOKEN = "AAABnvxRVklrnYxKZ0aHgTBcXukeZygoC";
+	private final String ADMIN_TOKEN = "AAABnvxRVklrnYxKZ0aHgTBcXukeZygoC";
 
-    public User createUser(SignupRequestDto signupRequestDto) {
-        String username = signupRequestDto.getUsername();
-        String password = passwordEncoder.encode(signupRequestDto.getPassword());
-        String info = signupRequestDto.getInfo();
+	public User createUser(SignupRequestDto signupRequestDto) {
+		String username = signupRequestDto.getUsername();
+		String password = passwordEncoder.encode(signupRequestDto.getPassword());
+		String info = signupRequestDto.getInfo();
 
-        Optional<User> checkUser = userRepository.findByUsername(username);
-        if(checkUser.isPresent()) {
-            throw new IllegalArgumentException("중복된 사용자가 존재합니다");
-        }
+		Optional<User> checkUser = userRepository.findByUsername(username);
+		if (checkUser.isPresent()) {
+			throw new IllegalArgumentException("중복된 사용자가 존재합니다");
+		}
 
-        UserRoleEnum role = UserRoleEnum.USER;
-        if (signupRequestDto.isAdmin()) {
-            if(!ADMIN_TOKEN.equals(signupRequestDto.getAdminToken())) {
-                throw new IllegalArgumentException("관리자 암호가 틀렸습니다");
-            }
-            role = UserRoleEnum.ADMIN;
-        }
+		UserRoleEnum role = UserRoleEnum.USER;
+		if (signupRequestDto.isAdmin()) {
+			if (!ADMIN_TOKEN.equals(signupRequestDto.getAdminToken())) {
+				throw new IllegalArgumentException("관리자 암호가 틀렸습니다");
+			}
+			role = UserRoleEnum.ADMIN;
+		}
 
-        User user = new User(username, password, role, info);
-        return userRepository.save(user);
-    }
+		User user = new User(username, password, role, info);
+		return userRepository.save(user);
+	}
 
-    public LoginResponseDto loginUser(@RequestBody LoginRequsetDto loginRequsetDto) {
-        User user = this.userRepository.findByUsername(loginRequsetDto.getUsername()).orElseThrow(
-            ()-> new IllegalArgumentException("아이디를 다시 확인해주세요")
-        );
+	public LoginResponseDto loginUser(@RequestBody LoginRequsetDto loginRequsetDto) {
+		User user = this.userRepository.findByUsername(loginRequsetDto.getUsername()).orElseThrow(
+			() -> new IllegalArgumentException("아이디를 다시 확인해주세요")
+		);
 
-        Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(loginRequsetDto.getUsername(),
-                loginRequsetDto.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+		Authentication authentication = authenticationManager.authenticate(
+			new UsernamePasswordAuthenticationToken(loginRequsetDto.getUsername(),
+				loginRequsetDto.getPassword()));
+		SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        String token = jwtUtil.createToken(loginRequsetDto.getUsername(),UserRoleEnum.USER);
-        userRepository.save(user);
+		String token = jwtUtil.createToken(loginRequsetDto.getUsername(), UserRoleEnum.USER);
+		userRepository.save(user);
 
-        return new LoginResponseDto(token, "로그인에 성공했습니다.");
-    }
+		return new LoginResponseDto(token, "로그인에 성공했습니다.");
+	}
 
-    public UserInfoDto getInfo(String username) {
-        User user = findByUsername(username);
-        return new UserInfoDto(user);
-    }
+	public User findByUsername(String username) {
+		return userRepository.findByUsername(username).orElseThrow(
+			() -> new IllegalArgumentException("등록된 회원이 아닙니다.")
+		);
+	}
 
-    public User findByUsername(String username) {
-        return userRepository.findByUsername(username).orElseThrow(
-            ()-> new IllegalArgumentException("등록된 회원이 아닙니다.")
-        );
-    }
-
-    public UserInfoDto getInfo(User user) {
-        return new UserInfoDto(user);
-    }
+	public UserInfoDto getInfo(User user) {
+		return new UserInfoDto(user);
+	}
 }

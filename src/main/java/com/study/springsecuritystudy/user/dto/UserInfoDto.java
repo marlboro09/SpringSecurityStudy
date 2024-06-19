@@ -10,9 +10,7 @@ import lombok.Getter;
 public class UserInfoDto {
 	String username;
 
-	boolean isAdmin;
-
-	public UserInfoDto(User getUser) {
-		this.username = username;
+	public UserInfoDto(User user) {
+		this.username = user.getUsername();
 	}
 }
